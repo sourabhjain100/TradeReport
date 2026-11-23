@@ -138,7 +138,11 @@ function addParsed(p,replace){if(!p.length){msg='No trades found.';return}
 function compute(){
  var T=trades.map(function(t){return Object.assign({},t,{pnl:null,hide:false,tk:RN[t.tk]||t.tk})});
  if(MODE!='opt')T.forEach(function(t){SP.forEach(function(s){if(s.tk==t.tk&&t.date<s.date&&t.qty)t.qty=t.qty*s.ratio})});
- if(MODE=='opt'){var sk={},tdy0=tIso();T.slice().forEach(function(t){var k=[t.tk,+t.strike,t.type,t.exp].join('|');if(!sk[k]&&t.edate&&t.edate<tdy0){sk[k]=1;T.push({side:'Exp',tk:t.tk,strike:t.strike,type:t.type,exp:t.exp,date:t.edate,qty:0,amt:0,fee:0,seq:1e12,pnl:null,hide:false})}})}
+ if(PLAT=='wb'&&MODE=='opt'){var ek={},tdy0=tIso();
+  T.forEach(function(t){var k=[t.tk,+t.strike,t.type,t.exp].join('|'),ex=(t.exp||'').split('/'),ed=t.edate||'';
+   if(!ed&&ex.length==2&&!(+ex[0]==1&&+ex[1]>=15&&+ex[1]<=21)){var y=+t.date.slice(0,4);ed=iso(y,+ex[0],+ex[1]);if(ed<t.date)ed=iso(y+1,+ex[0],+ex[1])}
+   var o=ek[k];if(ed&&(!o||(t.edate&&!o.exact)||(!o.exact&&!t.edate&&t.date<o.t.date)))ek[k]={ed:ed,exact:!!t.edate,t:t}});
+  Object.keys(ek).forEach(function(k){var o=ek[k];if(o.ed<tdy0)T.push({side:'Exp',tk:o.t.tk,strike:o.t.strike,type:o.t.type,exp:o.t.exp,date:o.ed,qty:0,amt:0,fee:0,seq:1e12,pnl:null,hide:false})})}
  T.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:((a.side=='Exp')-(b.side=='Exp'))||a.seq-b.seq});
  var pos={};
  T.forEach(function(t){
